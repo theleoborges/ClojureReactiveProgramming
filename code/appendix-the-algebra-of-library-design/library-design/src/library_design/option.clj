@@ -99,23 +99,18 @@
      (fkc/fmap inc)
      (fkc/fmap #(* 2 %))) ;; #<Future@30518bfc: #<Success@39bd662c: 82>>
 
+
+;; Functor laws
+
+;; Identity
 (= (fkc/fmap identity (option 1))
-   (identity (option 1)))
+   (identity (option 1))) ;; true
 
 
+;; Composition
 (= (fkc/fmap (comp identity inc) (option 1))
-   (fkc/fmap identity (fkc/fmap inc (option 1))))
+   (fkc/fmap identity (fkc/fmap inc (option 1)))) ;; true
 
-
-;; (defn sum-and-double-option [a b c]
-;;   (->> (when (and a b c)
-;;          (sum-3 a b c))
-;;        double-n))
-
-
-;; (sum-and-double-option 1 2 3) ;; 12
-
-;; (sum-and-double-option 1 nil 3) ;; NullPointerException   clojure.lang.Numbers.ops
 
 (def  repl-out *out*)
 (defn prn-to-repl [& args]
@@ -123,22 +118,34 @@
     (apply prn args)))
 
 
-(as-> (i/const-future 31) f
-      (fkc/fmap #(* % 2) f)
-      (i/on-success f #(prn-to-repl (str "Value: " %))))
-
-
-(map inc [1 2 ])
-
+;;
+;; Applicative
+;;
 
 (defn avg [& xs]
   (float (/ (apply + xs) (count xs))))
 
-(def age-option (comp (partial fkc/fmap age) option pirate-by-name))
+(comment
 
-;;
-;; Applicative
-;;
+
+
+  (let [a (some-> (pirate-by-name "Jack Sparrow") age)
+        b (some-> (pirate-by-name "Blackbeard") age)
+        c (some-> (pirate-by-name "Hector Barbossa") age)]
+    (avg a b c)) ;; 56.666668
+
+  (let [a (some-> (pirate-by-name "Jack Sparrow") age)
+        b (some-> (pirate-by-name "Davy Jones") age)
+        c (some-> (pirate-by-name "Hector Barbossa") age)]
+    (avg a b c)) ;; NullPointerException   clojure.lang.Numbers.ops (Numbers.java:961)
+
+  (let [a (some-> (pirate-by-name "Jack Sparrow") age)
+        b (some-> (pirate-by-name "Davy Jones") age)
+        c (some-> (pirate-by-name "Hector Barbossa") age)]
+    (when (and a b c)
+      (avg a b c))) ;; nil
+
+  )
 
 
 (extend-protocol fkp/Applicative
@@ -147,7 +154,9 @@
     (Some. v))
 
   (fapply [ag av]
-    (Some. ((:v ag) (:v av))))
+    (if-let [v (:v av)]
+      (Some. ((:v ag) v))
+      (None.)))
 
   None
   (pure [_ v]
@@ -156,11 +165,21 @@
   (fapply [ag av]
     (None.)))
 
-(fkc/<*> (option (fkj/curry avg 3))
-         (age-option "Jack Sparrow")
-         (age-option "Blackbeard")
-         (age-option "Hector Barbossa")) ;; #library_design.option.Some{:v 56.666668}
 
+(fkc/fapply (option inc) (option 2))
+;; #library_design.option.Some{:v 3}
+
+(fkc/fapply (option nil) (option 2))
+;; #library_design.option.None{}
+
+(def age-option (comp (partial fkc/fmap age) option pirate-by-name))
+
+(let [a (age-option "Jack Sparrow")
+      b (age-option "Blackbeard")
+      c (age-option "Hector Barbossa")]
+  (fkc/<*> (option (fkj/curry avg 3))
+           a b c))
+;; #library_design.option.Some{:v 56.666668}
 
 (defn alift
   "Lifts a n-ary function `f` into a applicative context"
@@ -168,21 +187,38 @@
   (fn [& as]
     {:pre  [(seq as)]}
     (let [curried (fkj/curry f (count as))]
-      (prn "first " (fkc/fmap curried (first as)))
       (apply fkc/<*>
              (fkc/fmap curried (first as))
              (rest as)))))
 
-((alift avg) (age-option "Jack Sparrow") (age-option "Blackbeard") (age-option "Hector Barbossa"))
-((alift prn)  (option 2) (age-option "Jack Sparrow"))
-((alift prn)  (age-option "Jack Sparrow") (option 2) )
 
-(= (type (age-option "Jack Sparrow")) (type (option 2)) )
-
-
-(fkc/fmap (fkj/curry prn 1) (age-option "Jack Sparrow"))
+(let [a (age-option "Jack Sparrow")
+      b (age-option "Blackbeard")
+      c (age-option "Hector Barbossa")]
+  ((alift avg) a b c))
 ;; #library_design.option.Some{:v 56.666668}
 
+((alift avg) (age-option "Jack Sparrow")
+             (age-option "Blackbeard")
+             (age-option "Hector Barbossa"))
+;; #library_design.option.Some{:v 56.666668}
+
+((alift avg) (age-option "Jack Sparrow")
+             (age-option "Davy Jones")
+             (age-option "Hector Barbossa"))
+;; #library_design.option.None{}
+
+
+
+((alift avg) (i/future (some-> (pirate-by-name "Jack Sparrow") age))
+             (i/future (some-> (pirate-by-name "Blackbeard") age))
+             (i/future (some-> (pirate-by-name "Hector Barbossa") age)))
+;; #<Future@17b1be96: #<Success@16577601: 56.666668>>
+
+(->> (i/future (pirate-by-name "Jack Sparrow"))
+     (fkc/fmap age)
+     (fkc/fmap inc)
+     (fkc/fmap #(* 2 %)))
 
 
 ;;
