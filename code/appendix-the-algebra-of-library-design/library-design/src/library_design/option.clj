@@ -225,37 +225,64 @@
 ;; Monad
 ;;
 
+(defn median [& ns]
+  (let [ns (sort ns)
+        cnt (count ns)
+        mid (bit-shift-right cnt 1)]
+    (if (odd? cnt)
+      (nth ns mid)
+      (/ (+ (nth ns mid) (nth ns (dec mid))) 2))))
+
+(defn std-dev [& samples]
+  (let [n (count samples)
+	mean (/ (reduce + samples) n)
+	intermediate (map #(Math/pow (- %1 mean) 2) samples)]
+    (Math/sqrt
+     (/ (reduce + intermediate) n))))
+
+
 (comment
 
+  (let  [a       (some-> (pirate-by-name "Jack Sparrow")    age)
+         b       (some-> (pirate-by-name "Blackbeard")      age)
+         c       (some-> (pirate-by-name "Hector Barbossa") age)
+         avg     (avg a b c)
+         median  (median a b c)
+         std-dev (std-dev a b c)]
+    {:avg avg
+     :median median
+     :std-dev std-dev})
+  ;; {:avg 56.666668,
+  ;;  :median 60,
+  ;;  :std-dev 12.472191289246473}
 
 
+  (let  [a       (some-> (pirate-by-name "Jack Sparrow")    age)
+         b       (some-> (pirate-by-name "Davy Jones")      age)
+         c       (some-> (pirate-by-name "Hector Barbossa") age)
+         avg     (avg a b c)
+         median  (median a b c)
+         std-dev (std-dev a b c)]
+    {:avg avg
+     :median median
+     :std-dev std-dev})
+  ;; NullPointerException   clojure.lang.Numbers.ops (Numbers.java:961)
 
-
-
-  (let  [a (-> (pirate-by-name "Jack Sparrow")    age)
-         b (-> (pirate-by-name "Blackbeard")      age)
-         c (-> (pirate-by-name "Hector Barbossa") age)]
-    (avg a b c)) ;; 56.666668
-
-  (let  [a (-> (pirate-by-name "Jack Sparrow")    age)
-         b (-> (pirate-by-name "Davy Jones")      age)
-         c (-> (pirate-by-name "Hector Barbossa") age)]
-    (avg a b c)) ;; NullPointerException   clojure.lang.Numbers.ops (Numbers.java:961)
-
-
-  (let  [a (some-> (pirate-by-name "Jack Sparrow")    age)
-         b (some-> (pirate-by-name "Davy Jones")      age)
-         c (some-> (pirate-by-name "Hector Barbossa") age)]
-    (avg a b c)) ;; NullPointerException   clojure.lang.Numbers.ops (Numbers.java:961)
-
-  (let  [a (some-> (pirate-by-name "Jack Sparrow")    age)
-         b (some-> (pirate-by-name "Davy Jones")      age)
-         c (some-> (pirate-by-name "Hector Barbossa") age)]
+  (let  [a       (some-> (pirate-by-name "Jack Sparrow")    age)
+         b       (some-> (pirate-by-name "Davy Jones")      age)
+         c       (some-> (pirate-by-name "Hector Barbossa") age)
+         avg     (when (and a b c) (avg a b c))
+         median  (when (and a b c) (median a b c))
+         std-dev (when (and a b c) (std-dev a b c))]
     (when (and a b c)
-      (avg a b c))) ;; nil
+      {:avg avg
+       :median median
+       :std-dev std-dev}))
+  ;; nil
 
 
   )
+
 
 (extend-protocol fkp/Monad
   Some
@@ -270,51 +297,85 @@
 
 ;; (fkc/bind (None.) identity)
 
+(def opt-ctx (None.))
+
 (fkc/bind (age-option "Jack Sparrow")
           (fn [a]
             (fkc/bind (age-option "Blackbeard")
                       (fn [b]
                         (fkc/bind (age-option "Hector Barbossa")
                                   (fn [c]
-                                    (option (float (/ (+ a b c) 3)))))))))
+                                    (fkc/pure opt-ctx
+                                              (+ a b c))))))))
+;; #library_design.option.Some{:v 170.0}
 
 (fkc/mdo [a (age-option "Jack Sparrow")
           b (age-option "Blackbeard")
           c (age-option "Hector Barbossa")]
-         (option  (float (/ (+ a b c) 3)))) ;; #library_design.option.Some{:v 56.666668}
-
-(fkc/mdo [a (age-option "Jack Sparrow")
-          b (age-option "Davy Jones")
-          c (age-option "Hector Barbossa")]
-         (option  (float (/ (+ a b c) 3)))) ;; #library_design.option.None{}
-
+         (fkc/pure opt-ctx  (+ a b c)))
+;; #library_design.option.Some{:v 170.0}
 
 (require '[clojure.walk :as w])
+
 (w/macroexpand-all '(fkc/mdo [a (age-option "Jack Sparrow")
                               b (age-option "Blackbeard")
                               c (age-option "Hector Barbossa")]
-                             (option  (float (/ (+ a b c) 3)))))
+                             (fkc/pure opt-ctx  (+ a b c))))
+
+;; (uncomplicate.fluokitten.core/bind
+;;  (age-option "Jack Sparrow")
+;;  (fn*
+;;   ([a]
+;;    (uncomplicate.fluokitten.core/bind
+;;     (age-option "Blackbeard")
+;;     (fn*
+;;      ([b]
+;;       (uncomplicate.fluokitten.core/bind
+;;        (age-option "Hector Barbossa")
+;;        (fn* ([c] (fkc/pure opt-ctx (+ a b c)))))))))))
 
 
-(defn mlift2
-  "Lifts a binary function `f` into a monadic context"
-  [f]
-  (fn [ma mb]
-    (fkc/mdo [a ma
-              b mb]
-             (fkc/pure ma (f a b)))))
+(def avg-opt     (comp option avg))
+(def median-opt  (comp option median))
+(def std-dev-opt (comp option std-dev))
 
-(defn msequence
-  "`ctx` is the monadic context.
-  Given a monad `m` and a list of monads `ms`, it returns a single monad containing a list of
-  the values yielded by all monads in `ms`"
-  [ctx ms]
-  (reduce (mlift2 conj)
-          (fkc/pure ctx [])
-          ms))
+(fkc/mdo [a       (age-option "Jack Sparrow")
+          b       (age-option "Blackbeard")
+          c       (age-option "Hector Barbossa")
+          avg     (avg-opt a b c)
+          median  (median-opt a b c)
+          std-dev (std-dev-opt a b c)]
+         (fkc/pure opt-ctx {:avg avg
+                  :median median
+                  :std-dev std-dev}))
+;; #library_design.option.Some{:v {:avg 56.666668,
+;;                                 :median 60,
+;;                                 :std-dev 12.472191289246473}}
 
-(def m-ctx (option nil))
-(->> (msequence  m-ctx [(age-option "Jack Sparrow")
-                        (age-option "Blackbeard")
-                        (age-option "Hector Barbossa")]) ;; #library_design.option.Some{:v [40 70 60]}
-     (fkc/fmap #(apply avg %))) ;; #library_design.option.Some{:v 56.666668}
+(fkc/mdo [a       (age-option "Jack Sparrow")
+          b       (age-option "Davy Jones")
+          c       (age-option "Hector Barbossa")
+          avg     (avg-opt a b c)
+          median  (median-opt a b c)
+          std-dev (std-dev-opt a b c)]
+         (fkc/pure opt-ctx {:avg avg
+                  :median median
+                  :std-dev std-dev}))
+;; #library_design.option.None{}
+
+(def avg-fut     (comp i/future-call avg))
+(def median-fut  (comp i/future-call median))
+(def std-dev-fut (comp i/future-call std-dev))
+
+(fkc/mdo [a       (i/future (some-> (pirate-by-name "Jack Sparrow") age))
+          b       (i/future (some-> (pirate-by-name "Blackbeard") age))
+          c       (i/future (some-> (pirate-by-name "Hector Barbossa") age))
+          avg     (avg-fut a b c)
+          median  (median-fut a b c)
+          std-dev (std-dev-fut a b c)]
+         (i/const-future {:avg avg
+                          :median median
+                          :std-dev std-dev}))
+;; #<Future@3fd0b0d0: #<Success@1e08486b: {:avg 56.666668,
+;;                                         :median 60,
+;;                                         :std-dev 12.472191289246473}>>
