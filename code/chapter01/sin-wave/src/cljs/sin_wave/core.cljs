@@ -1,6 +1,4 @@
-(ns sin-wave.core
-  (:require [om.core :as om :include-macros true]
-            [om.dom :as dom :include-macros true]))
+(ns sin-wave.core)
 
 ;; helper functions and RxJS wrappers
 (def concat    js/Rx.Observable.concat)
