@@ -29,13 +29,14 @@
                  :sin sin})))))
 
 (def colour (.map sine-wave
-                     (fn [{:keys [sin]}]
-                       (if (< sin 0)
-                         "red"
-                         "blue"))))
+                  (fn [{:keys [sin]}]
+                    (if (< sin 0)
+                      "red"
+                      "blue"))))
 
 (def red  (.map time (fn [_] "red")))
 (def blue (.map time (fn [_] "blue")))
+
 (def mouse-click (.fromEvent js/Rx.Observable canvas "click"))
 
 (def cycle-colour
