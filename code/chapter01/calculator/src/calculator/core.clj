@@ -1,5 +1,5 @@
 (ns calculator.core
-  (:use seesaw.core))
+  (:require [seesaw.core :refer :all]))
 
 (native!)
 
