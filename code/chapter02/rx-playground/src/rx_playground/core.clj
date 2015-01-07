@@ -50,12 +50,11 @@
 ;; Manipulating observables
 ;;
 
-(def first-5-even-numbers (->> (Observable/interval 1 TimeUnit/MICROSECONDS)
-                               (rx/filter even?)
-                               (rx/take 5)
-                               (rx/reduce +)))
-
-(rx/subscribe first-5-even-numbers prn-to-repl)
+(rx/subscribe (->> (Observable/interval 1 TimeUnit/MICROSECONDS)
+                   (rx/filter even?)
+                   (rx/take 5)
+                   (rx/reduce +))
+                   prn-to-repl)
 
 
 (defn musicians []
@@ -64,12 +63,12 @@
 (defn bands     []
   (rx/seq->o ["Metallica" "Megadeth" "Slayer"]))
 
-(defn uppercased-bands []
+(defn uppercased-obs []
   (rx/map (fn [s] (.toUpperCase s)) (bands)))
 
 (-> (rx/map vector
             (musicians)
-            (uppercased-bands))
+            (uppercased-obs))
     (rx/subscribe (fn [[musician band]]
                     (prn-to-repl (str musician " - from: " band)))))
 
@@ -90,7 +89,7 @@
      (rx/on-next observer (factorial n))
      (rx/on-completed observer))))
 
-(rx/subscribe (fact-obs 2) prn-to-repl)
+(rx/subscribe (fact-obs 5) prn-to-repl)
 
 
 (rx/subscribe (->> (all-positive-integers)
@@ -100,7 +99,7 @@
               prn-to-repl)
 
 (defn repeat-obs [n]
-  (rx/seq->o (vec (repeat 2 n))))
+  (rx/seq->o (repeat 2 n)))
 
 (-> (repeat-obs 5)
     (rx/subscribe prn-to-repl))
