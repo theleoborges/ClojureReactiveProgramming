@@ -1,26 +1,25 @@
 (ns rx-playground.core)
 
+
+(require '[rx.lang.clojure.core :as rx])
 (import '(rx Observable))
-(require '[rx.lang.clojure.interop :as rx])
 
 ;;
 ;; Creating Observables
 ;;
 
-(def obs (Observable/just 10))
+(def obs (rx/return 10))
 
-(.subscribe obs
-            (rx/action [value]
-                       (prn (str "Got value: " value))))
+(rx/subscribe obs
+              (fn [value]
+                (prn (str "Got value: " value))))
 
 
-(-> (Observable/from [1 2 3 4 5 6 7 8 9 10])
-    (.subscribe (rx/action [n]
-                           (prn n))))
+(-> (rx/seq->o [1 2 3 4 5 6 7 8 9 10])
+    (rx/subscribe prn))
 
-(-> (Observable/range 1 10)
-    (.subscribe (rx/action [n]
-                           (prn n))))
+(-> (rx/range 1 10)
+    (rx/subscribe prn))
 
 
 (import '(java.util.concurrent TimeUnit))
@@ -31,55 +30,52 @@
     (apply prn args)))
 
 
-(def subscription (-> (Observable/interval 100 TimeUnit/MILLISECONDS)
-                      (.subscribe (rx/action [n]
-                                             (prn-to-repl n)))))
+(def subscription (rx/subscribe (Observable/interval 100 TimeUnit/MILLISECONDS)
+                                prn-to-repl))
 
 (Thread/sleep 1000)
 
-(.unsubscribe subscription)
+(rx/unsubscribe subscription)
 
 (defn just-obs [v]
-  (Observable/create
-   (rx/fn [observer]
-     (.onNext observer v)
-     (.onCompleted observer))))
+  (rx/observable*
+   (fn [observer]
+     (rx/on-next observer v)
+     (rx/on-completed observer))))
 
-(-> (just-obs 20)
-    (.subscribe (rx/action [n]
-                           (prn n))))
+(rx/subscribe (just-obs 20) prn)
 
 
 ;;
 ;; Manipulating observables
 ;;
 
-(-> (Observable/interval 1 TimeUnit/MICROSECONDS)
-    (.filter (rx/fn [n] (even? n)))
-    (.take 5)
-    (.reduce (rx/fn* +))
-    (.subscribe (rx/action [n]
-                           (prn-to-repl n))))
+(def first-5-even-numbers (->> (Observable/interval 1 TimeUnit/MICROSECONDS)
+                               (rx/filter even?)
+                               (rx/take 5)
+                               (rx/reduce +)))
+
+(rx/subscribe first-5-even-numbers prn-to-repl)
 
 
 (defn musicians []
-  (Observable/from ["James Hetfield" "Dave Mustaine" "Kerry King"]))
+  (rx/seq->o ["James Hetfield" "Dave Mustaine" "Kerry King"]))
 
 (defn bands     []
-  (Observable/from ["Metallica" "Megadeth" "Slayer"]))
+  (rx/seq->o ["Metallica" "Megadeth" "Slayer"]))
 
 (defn uppercased-bands []
-  (.map (bands) (rx/fn [s] (.toUpperCase s))))
+  (rx/map (fn [s] (.toUpperCase s)) (bands)))
 
-(-> (Observable/zip (musicians)
-                    (uppercased-bands)
-                    (rx/fn* vector))
-    (.subscribe (rx/action [[musician band]]
-                           (prn-to-repl (str musician " - from: " band)))))
+(-> (rx/map vector
+            (musicians)
+            (uppercased-bands))
+    (rx/subscribe (fn [[musician band]]
+                    (prn-to-repl (str musician " - from: " band)))))
 
 
 ;;
-;; Flatmapping
+;; Mapcatting / Flatmapping
 ;;
 
 (defn factorial [n]
@@ -89,32 +85,28 @@
   (Observable/interval 1 TimeUnit/MICROSECONDS))
 
 (defn fact-obs [n]
-  (Observable/create
-   (rx/fn [observer]
-     (.onNext observer (factorial n))
-     (.onCompleted observer))))
+  (rx/observable*
+   (fn [observer]
+     (rx/on-next observer (factorial n))
+     (rx/on-completed observer))))
 
-(-> (fact-obs 2)
-    (.subscribe (rx/action [fac]
-                           (prn-to-repl fac))))
+(rx/subscribe (fact-obs 2) prn-to-repl)
 
-(-> (all-positive-integers)
-    (.filter (rx/fn* even?))
-    (.flatMap (rx/fn* fact-obs))
-    (.take 5)
-    (.subscribe (rx/action [fac]
-                           (prn-to-repl fac))))
+
+(rx/subscribe (->> (all-positive-integers)
+                   (rx/filter  even?)
+                   (rx/flatmap fact-obs)
+                   (rx/take 5))
+              prn-to-repl)
 
 (defn repeat-obs [n]
-  (Observable/from ^clojure.lang.PersistentVector
-                   (vec (repeat 2 n))))
+  (rx/seq->o (vec (repeat 2 n))))
 
 (-> (repeat-obs 5)
-    (.subscribe (rx/action [v]
-                           (prn-to-repl v))))
+    (rx/subscribe prn-to-repl))
 
-(-> (all-positive-integers)
-    (.flatMap (rx/fn* repeat-obs))
-    (.take 6)
-    (.subscribe (rx/action [fac]
-                           (prn-to-repl fac))))
+
+(rx/subscribe (->> (all-positive-integers)
+                   (rx/flatmap repeat-obs)
+                   (rx/take 6))
+              prn-to-repl)
