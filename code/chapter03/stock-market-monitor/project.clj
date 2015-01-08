@@ -5,4 +5,4 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [seesaw "1.4.4"]
-                 [com.netflix.rxjava/rxjava-clojure "0.17.0-RC1"]])
+                 [io.reactivex/rxclojure "1.0.0"]])

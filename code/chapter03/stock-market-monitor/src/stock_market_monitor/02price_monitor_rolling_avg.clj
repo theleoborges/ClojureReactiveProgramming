@@ -1,8 +1,8 @@
 (ns stock-market-monitor.02price-monitor-rolling-avg
+  (:require [seesaw.core :refer :all])
   (:import (java.util.concurrent ScheduledThreadPoolExecutor
                                  TimeUnit)
-           (clojure.lang PersistentQueue))
-  (:use seesaw.core))
+           (clojure.lang PersistentQueue)))
 
 (native!)
 

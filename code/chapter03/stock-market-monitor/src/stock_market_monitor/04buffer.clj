@@ -1,7 +1,7 @@
 (ns stock-market-monitor.04buffer
+  (:require [rx.lang.clojure.core :as rx])
   (:import (java.util.concurrent TimeUnit)
-           (rx Observable))
-  (:require [rx.lang.clojure.interop :as rx]))
+           (rx Observable)))
 
 (def values (range 10))
 
@@ -13,8 +13,8 @@
   (binding [*out* repl-out]
     (apply prn args)))
 
-(-> (Observable/from ^clojure.lang.PersistentVector (vec (range 10)))
+(-> (rx/seq->o (vec (range 10)))
     (.buffer 5 1)
-    (.subscribe
-     (rx/action [price]
-                (prn (str "Value: " price)))))
+    (rx/subscribe
+     (fn [price]
+       (prn (str "Value: " price)))))

@@ -1,8 +1,8 @@
 (ns stock-market-monitor.05frp-price-monitor-rolling-avg
+  (:require [rx.lang.clojure.core :as rx]
+            [seesaw.core :refer :all])
   (:import (java.util.concurrent TimeUnit)
-           (rx Observable))
-  (:use seesaw.core)
-  (:require [rx.lang.clojure.interop :as rx]))
+           (rx Observable)))
 
 (native!)
 
@@ -28,21 +28,18 @@
             (count numbers))))
 
 (defn make-price-observable [_]
-  (Observable/create
-   (rx/fn [observer]
-     (.onNext observer (share-price "XYZ"))
-     (.onCompleted observer))))
+  (rx/return (share-price "XYZ")))
 
 (defn -main [& args]
   (show! main-frame)
-  (let [price-obs (-> (Observable/interval 500 TimeUnit/MILLISECONDS)
-                      (.flatMap (rx/fn* make-price-observable))
+  (let [price-obs (-> (rx/flatmap make-price-observable
+                                  (Observable/interval 500 TimeUnit/MILLISECONDS))
                       (.publish))
         sliding-buffer-obs (.buffer price-obs 5 1)]
-    (.subscribe price-obs
-                (rx/action [price]
-                           (text! price-label (str "Price: " price))))
-    (.subscribe sliding-buffer-obs
-                (rx/action [buffer]
-                           (text! running-avg-label (str "Running average: " (avg buffer)))))
+    (rx/subscribe price-obs
+                  (fn [price]
+                    (text! price-label (str "Price: " price))))
+    (rx/subscribe sliding-buffer-obs
+                  (fn [buffer]
+                    (text! running-avg-label (str "Running average: " (avg buffer)))))
     (.connect price-obs)))

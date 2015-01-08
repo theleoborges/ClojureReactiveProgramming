@@ -1,8 +1,8 @@
 (ns stock-market-monitor.03frp-price-monitor
+  (:require [rx.lang.clojure.core :as rx]
+            [seesaw.core :refer :all])
   (:import (java.util.concurrent TimeUnit)
-           (rx Observable))
-  (:use seesaw.core)
-  (:require [rx.lang.clojure.interop :as rx]))
+           (rx Observable)))
 
 (native!)
 
@@ -28,15 +28,12 @@
             (count numbers))))
 
 (defn make-price-obs [company-code]
-  (Observable/create
-   (rx/fn [observer]
-     (.onNext observer (share-price company-code))
-     (.onCompleted observer))))
+  (rx/return (share-price company-code)))
 
 (defn -main [& args]
   (show! main-frame)
-  (let [price-obs (-> (Observable/interval 500 TimeUnit/MILLISECONDS)
-                      (.flatMap (rx/fn [_]  (make-price-obs "XYZ"))))]
-    (.subscribe price-obs
-                (rx/action [price]
-                           (text! price-label (str "Price: " price))))))
+  (let [price-obs (rx/flatmap (fn [_] (make-price-obs "XYZ"))
+                              (Observable/interval 500 TimeUnit/MILLISECONDS))]
+    (rx/subscribe price-obs
+                  (fn [price]
+                    (text! price-label (str "Price: " price))))))

@@ -1,7 +1,7 @@
 (ns stock-market-monitor.01price-monitor
+  (:require [seesaw.core :refer :all])
   (:import (java.util.concurrent ScheduledThreadPoolExecutor
-                                 TimeUnit))
-  (:use seesaw.core))
+                                 TimeUnit)))
 
 (native!)
 
