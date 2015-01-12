@@ -47,18 +47,19 @@
   (float (/ (reduce + numbers)
             (count numbers))))
 
-(defn running-avg [buffer-size]
+(defn make-running-avg [buffer-size]
   (let [buffer (atom clojure.lang.PersistentQueue/EMPTY)]
     (fn [n]
       (swap! buffer roll-buffer n buffer-size)
       (avg @buffer))))
 
-(def running-avg' (running-avg 5))
+(def running-avg (make-running-avg 5))
 
 (defn worker []
   (let [price (share-price "XYZ")]
-    (text! price-label (str "Price: " price))
-    (text! running-avg-label (str "Running average: " (running-avg' price)))))
+    (->> (str "Price: " price) (text! price-label))
+    (->> (str "Running average: " (running-avg price))
+         (text! running-avg-label))))
 
 (defn -main [& args]
   (show! main-frame)

@@ -27,12 +27,12 @@
   (float (/ (reduce + numbers)
             (count numbers))))
 
-(defn make-price-observable [_]
+(defn make-price-obs [_]
   (rx/return (share-price "XYZ")))
 
 (defn -main [& args]
   (show! main-frame)
-  (let [price-obs (-> (rx/flatmap make-price-observable
+  (let [price-obs (-> (rx/flatmap make-price-obs
                                   (Observable/interval 500 TimeUnit/MILLISECONDS))
                       (.publish))
         sliding-buffer-obs (.buffer price-obs 5 1)]

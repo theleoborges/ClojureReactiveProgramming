@@ -37,4 +37,6 @@
                     (Thread. #(shutdown @pool)))
   (init-scheduler 1)
   (run-every @pool 500
-             #(invoke-now (text! price-label (str "Price: " (share-price "XYZ"))))))
+             #(->> (str "Price: " (share-price "XYZ"))
+                   (text! price-label)
+                   invoke-now)))
