@@ -33,12 +33,12 @@
       (pop buffer)
       buffer)))
 
-(defn sliding-buffer [buffer-size]
+(defn make-sliding-buffer [buffer-size]
   (let [buffer (atom clojure.lang.PersistentQueue/EMPTY)]
     (fn [n]
       (swap! buffer roll-buffer n buffer-size))))
 
-(def sliding-buffer' (sliding-buffer 5))
+(def sliding-buffer (make-sliding-buffer 5))
 
 (defn broadcast-at-interval [msecs task & ports]
   (go-loop [out (apply broadcast ports)]
@@ -49,7 +49,7 @@
 (defn -main [& args]
   (show! main-frame)
   (let [prices-ch         (chan)
-        sliding-buffer-ch (map> sliding-buffer' (chan))]
+        sliding-buffer-ch (map> sliding-buffer (chan))]
     (broadcast-at-interval 500 #(share-price "XYZ") prices-ch sliding-buffer-ch)
     (go-loop []
       (when-let [price (<! prices-ch)]
@@ -59,5 +59,3 @@
       (when-let [buffer (<! sliding-buffer-ch)]
         (text! running-avg-label (str "Running average: " (avg buffer)))
         (recur)))))
-
-

@@ -14,7 +14,8 @@
                     (Thread/sleep 10000)
                     (callback answer)))]
     (prn "Perhaps the future has done its job?")
-    (prn "You should see this almost immediately and then in 10 secs...")))
+    (prn "You should see this almost immediately and then in 10 secs...")
+    f))
 
 (do-something-important (fn [answer]
                           (prn "Future is done. Answer is " answer)))
@@ -26,7 +27,7 @@
 (defn producer [c]
   (prn "Taking a nap")
   (Thread/sleep 5000)
-  (prn "Now putting a name in que queue...")
+  (prn "Now putting a name in queue...")
   (.put c "Leo"))
 
 (defn consumer [c]
