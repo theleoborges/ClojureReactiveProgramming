@@ -64,7 +64,7 @@
 
 (declare event-stream)
 
-(deftype EventStream [channel multiple head completed]
+(deftype EventStream [channel multiple completed]
   IEventStream
   (map [_ f]
     (let [out (map> f (chan))]
@@ -93,8 +93,7 @@
       (do (reset! completed true)
           (go (>! channel value)
               (close! channel)))
-      (go (>! channel value)))
-    (reset! head value))
+      (go (>! channel value))))
 
   (completed? [_] @completed)
 
@@ -108,14 +107,8 @@
           (when (and value (not= value ::complete))
             (f value)
             (recur))))
-      (Token. out)))
+      (Token. out))))
 
-
-  IDeref
-  (#+clj deref #+cljs -deref [_]
-    (if-let [hd @head]
-      hd
-      ::empty)))
 
 (defn event-stream
   "Creates and returns a new event stream. You can optionally provide an existing
@@ -124,9 +117,9 @@
      (event-stream (chan)))
   ([ch]
      (let [multiple  (mult ch)
-           head      (atom nil)
            completed (atom false)]
-       (EventStream. ch multiple head completed))))
+       (EventStream. ch multiple completed))))
+
 
 (defn from-interval
   "Creates and returns a new event stream which emits values at the given intervals.
