@@ -39,10 +39,12 @@
 (defn make-bullet-entity [monet-canvas key shape]
   (canvas/entity {:x (shape-x shape) :y (shape-y shape) :angle (shape-angle shape)}
                  (fn [value]
-                   (when (not (geom/contained? {:x 0 :y 0
-                                                :w (.-width (:canvas monet-canvas))
-                                                :h (.-height (:canvas monet-canvas))}
-                                               {:x (shape-x shape) :y (shape-y shape) :r 5}))
+                   (when (not
+                          (geom/contained?
+                           {:x 0 :y 0
+                            :w (.-width (:canvas monet-canvas))
+                            :h (.-height (:canvas monet-canvas))}
+                           {:x (shape-x shape) :y (shape-y shape) :r 5}))
                      (canvas/remove-entity monet-canvas key))
                    (move-forward! shape)
                    (-> value
@@ -62,18 +64,26 @@
 
 ;;x' = x cos f - y sin f
 
+(defn calculate-x [angle]
+  (* speed (/ (* (Math/cos angle)
+                 Math/PI)
+              180)))
+
+(defn calculate-y [angle]
+  (* speed (/ (* (Math/sin angle)
+                 Math/PI)
+              180)))
+
 (defn move! [shape f]
   (let [pos (:pos shape)]
     (swap! pos (fn [xy]
                  (-> xy
                      (update-in [:x]
-                                #(f % (* speed (/ (* (Math/cos (shape-angle shape))
-                                                     Math/PI)
-                                                  180))))
+                                #(f % (calculate-x
+                                       (shape-angle shape))))
                      (update-in [:y]
-                                #(f % (* speed (/ (* (Math/sin (shape-angle shape))
-                                                     Math/PI)
-                                                  180)))))))))
+                                #(f % (calculate-y
+                                       (shape-angle shape)))))))))
 
 
 (defn move-forward! [shape]
@@ -93,7 +103,9 @@
 
 (defn fire! [monet-canvas ship]
   (let [entity-key (keyword (gensym "bullet"))
-        data (shape-data (shape-x ship) (shape-y ship) (shape-angle ship))
+        data (shape-data (shape-x ship)
+                         (shape-y ship)
+                         (shape-angle ship))
         bullet (make-bullet-entity monet-canvas
                                    entity-key
                                    data)]
