@@ -25,17 +25,24 @@
 (def FIRE  32) ;; space
 (def PAUSE 80) ;; lower-case P
 
-(def GAME-KEYS #{UP RIGHT DOWN LEFT FIRE PAUSE})
+(defn keydown-stream []
+  (let [out (r/events)]
+    (set! (.-onkeydown js/document) #(r/deliver out [::down (.-keyCode %)]))
+    out))
 
-(defn from-game-keys [game-keys]
-  (let [active-keys (atom #{})
-        update-keys! #(swap! active-keys % (.-keyCode %2))]
-    (set! (.-onkeydown js/document) (partial update-keys! conj))
-    (set! (.-onkeyup js/document)   (partial update-keys! disj))
+(defn keyup-stream []
+  (let [out (r/events)]
+    (set! (.-onkeyup   js/document) #(r/deliver out [::up (.-keyCode %)]))
+    out))
 
-    (r/sample 50 active-keys)))
-
-(def active-keys-stream (from-game-keys GAME-KEYS))
+(def active-keys-stream
+  (->> (r/merge (keydown-stream) (keyup-stream))
+       (r/reduce (fn [acc [event-type key-code]]
+                   (condp = event-type
+                     ::down (conj acc key-code)
+                     ::up   (disj acc key-code)
+                     acc))
+                 #{})))
 
 (defn filter-map [pred f & args]
   (->> active-keys-stream
@@ -57,3 +64,12 @@
      (r/filter (partial some #{PAUSE}))
      (r/throttle 100)
      (r/map pause!))
+
+
+(comment
+  ;; REPL examples
+
+  (.log js/console "Hello")
+
+  (r/map #(.log js/console "Hello " %) active-keys-stream)
+  )
