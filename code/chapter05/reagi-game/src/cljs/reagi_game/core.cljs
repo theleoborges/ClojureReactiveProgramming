@@ -64,12 +64,3 @@
      (r/filter (partial some #{PAUSE}))
      (r/throttle 100)
      (r/map pause!))
-
-
-(comment
-  ;; REPL examples
-
-  (.log js/console "Hello")
-
-  (r/map #(.log js/console "Hello " %) active-keys-stream)
-  )
