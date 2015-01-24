@@ -9,12 +9,10 @@
 
 (def cards [{:id 1
              :title "Groceries shopping"
-             :description "Almond milk, mixed nuts, eggs..."
-             :priority 10}
+             :description "Almond milk, mixed nuts, eggs..."}
             {:id 2
              :title "Expenses"
-             :description "Submit last client's expense report"
-             :priority 9}])
+             :description "Submit last client's expense report"}])
 
 (defn card-by-id [id]
   (first (filterv #(= id (:id %)) cards)))
