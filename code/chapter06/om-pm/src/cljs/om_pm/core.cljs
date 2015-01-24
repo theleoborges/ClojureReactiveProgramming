@@ -1,7 +1,7 @@
 (ns om-pm.core
   (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
-            [cljs.core.async :refer [put! >! chan <!]]
+            [cljs.core.async :refer [put! chan <!]]
             [om-pm.util :refer [set-transfer-data! get-transfer-data! move-card!]])
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]))
 
@@ -15,6 +15,9 @@
              :title "Expenses"
              :description "Submit last client's expense report"
              :priority 9}])
+
+(defn card-by-id [id]
+  (first (filterv #(= id (:id %)) cards)))
 
 (def app-state
   (atom {:cards cards
@@ -57,8 +60,7 @@
                (apply dom/ul #js {:style #js {:list-style-type "none"
                                               :padding         "0px"}}
                       (om/build-all (partial card-view title)
-                                    (->> (om/get-shared owner :cards)
-                                         (filterv (comp (set cards) :id)))))))))
+                                    (mapv card-by-id cards)))))))
 
 (defn project-view [app owner]
   (reify

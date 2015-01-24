@@ -21,4 +21,4 @@
         (update-in [from :cards] (fn [cards]
                                    (remove #{card-id} cards)))
         (update-in [to   :cards] (fn [cards]
-                                   (sort-by :priority (conj cards card-id)))))))
+                                   (conj cards card-id))))))
