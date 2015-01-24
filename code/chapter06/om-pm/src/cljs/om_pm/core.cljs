@@ -26,16 +26,14 @@
                     :cards []}]}))
 
 (defn card-view [column {:keys [id title description] :as card} owner]
-  (reify
-    om/IRender
-    (render [this]
-      (dom/li #js {:style #js {:border "1px solid black"}
-                   :draggable true
-                   :onDragStart (fn [e]
-                                  (set-transfer-data! e "cardId" id)
-                                  (set-transfer-data! e "sourceColumn" column))}
-              (dom/span nil title)
-              (dom/p nil description)))))
+  (om/component
+   (dom/li #js {:style #js {:border "1px solid black"}
+                :draggable true
+                :onDragStart (fn [e]
+                               (set-transfer-data! e "cardId" id)
+                               (set-transfer-data! e "sourceColumn" column))}
+           (dom/span nil title)
+           (dom/p nil description))))
 
 (defn handle-drop [e transfer-chan column-title]
   (.preventDefault e)

@@ -10,10 +10,11 @@
   :source-paths ["src/clj" "src/cljs"]
 
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.clojure/clojurescript "0.0-2277"]
-                 [org.clojure/core.async "0.1.338.0-5c5012-alpha"]
+                 [org.clojure/clojurescript "0.0-2511"]
+                 [org.om/om "0.8.0"]
+                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [om "0.7.1"]
-                 [com.facebook/react "0.11.1"]]
+                 [com.facebook/react "0.12.2"]]
 
   :plugins [[lein-cljsbuild "1.0.3"]]
 
