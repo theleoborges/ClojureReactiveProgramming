@@ -42,7 +42,8 @@
                      ::down (conj acc key-code)
                      ::up   (disj acc key-code)
                      acc))
-                 #{})))
+                 #{})
+       (r/sample 25)))
 
 (defn filter-map [pred f & args]
   (->> active-keys-stream
