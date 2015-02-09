@@ -61,16 +61,16 @@
                 top-5-movies)))
 
 (defn aggregate-actor-data [spouses movies top-5]
-    (map (fn [{:keys [name spouse]} {:keys [movies]}]
-           {:name   name
-            :spouse spouse
-            :movies (map (fn [m]
-                           (if (some #{m} top-5)
-                             (str m " - (top 5)")
-                             m))
-                         movies)})
-         spouses
-         movies))
+  (map (fn [{:keys [name spouse]} {:keys [movies]}]
+         {:name   name
+          :spouse spouse
+          :movies (map (fn [m]
+                         (if (some #{m} top-5)
+                           (str m " - (top 5)")
+                           m))
+                       movies)})
+       spouses
+       movies))
 
 (defn -main [& args]
   (time (let [cast    (cast-by-movie "Lord of The Rings: The Fellowship of The Ring")
