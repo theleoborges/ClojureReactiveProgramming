@@ -18,7 +18,7 @@
       (rx/map #(* % 2) obs)
       (rx/subscribe obs #(prn-to-repl (str "Value: " %))))
 
-(def c        (chan))
+(def c        (async/chan))
 (def mapped-c (async/map< #(* % 2) c))
 
 (async/go (async/>! c 31))
