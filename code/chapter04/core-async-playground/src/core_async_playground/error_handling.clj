@@ -20,7 +20,7 @@
 
 (go (let [result  (<! (->> (process "data")
                            (map> #(* % %))
-                           (map> #(prn %))))]
+                           (map> #(prn %)))]
       (prn "result is: " result)))
 
 

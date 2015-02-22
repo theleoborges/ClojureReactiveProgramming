@@ -33,7 +33,7 @@
 
 ;; sample output
 
-"Attempting to take value from queue now... - Thread id: 43"
-"Taking a nap  - Thread id: 44"
-"Now putting a name in que queue... - Thread id: 48"
-"Got it. Hello Leo! - Thread id: 48"
+;; "Attempting to take value from queue now... - Thread id: 43"
+;; "Taking a nap  - Thread id: 44"
+;; "Now putting a name in que queue... - Thread id: 48"
+;; "Got it. Hello Leo! - Thread id: 48"
