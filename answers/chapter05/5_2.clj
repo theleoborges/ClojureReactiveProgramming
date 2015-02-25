@@ -1,4 +1,4 @@
-;; Exercise 4.2
+;; Exercise 5.2
 
 (defn zip [es1 es2]
   (let [out-vec (ref [nil nil])

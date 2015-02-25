@@ -1,4 +1,4 @@
-;; Exercise 4.1
+;; Exercise 5.1
 
 (defn take [es1 n]
   (let [count   (atom 0)
