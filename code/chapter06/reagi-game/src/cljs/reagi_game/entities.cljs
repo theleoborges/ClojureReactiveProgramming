@@ -58,6 +58,7 @@
                        (canvas/rotate (:angle val))
                        (canvas/fill-style "red")
                        (canvas/circle {:x 10 :y 0 :r 5})
+                       canvas/fill
                        canvas/restore))))
 
 (def speed 200)
